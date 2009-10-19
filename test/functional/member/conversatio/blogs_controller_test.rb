@@ -4,31 +4,45 @@ require File.dirname(__FILE__) + '/../../../test_helper'
 class Member::Conversatio::BlogsControllerTest < ActionController::TestCase
 
   def setup
-    @member_user = Factory(:user, :login => 'member_user', :admin => true)
-    @blog = Factory(:blog, :title => 'My Blog', :description => 'Cool description', :author => @member_user)
-    @bloggership = Factory(:bloggership, :user => @member_user, :blog => @blog)
-
     @controller = Member::Conversatio::BlogsController.new
-    @request    = ActionController::TestRequest.new
-    @response   = ActionController::TestResponse.new
-    @request.session[:user_id] = @member_user.id
+    @request = ActionController::TestRequest.new
+    @response = ActionController::TestResponse.new
   end
 
-# Deprecated should_be_restful
-#  should_be_restful do |resource|
-#    resource.formats       = [:html]
+  context "BloggershipsController in Member's area" do
+    context "with a logged user" do
+      setup do
+        @member_user = Factory(:user, :login => 'member_user')
+        @request.session[:user_id] = @member_user.id
 
-#    resource.actions       = [:index, :new, :edit, :update, :create, :destroy]
+        @blog = Factory.build(:blog, :title => 'My Blog', :description => 'Cool description')
+      end
 
-#    resource.create.params = { :title => "My Blog", :description => 'Cool description'}
-#    resource.update.params = { :title => "Correct name" }
+      context "on POST to :create" do
+        context "with valid attributes" do
+          setup do
+            post :create, :blog => {:title => @blog.title, :description => @blog.description}
+          end
 
-#    resource.create.redirect  = "conversatio_blog_path(@blog)"
-#    resource.update.redirect  = "conversatio_blog_path(@blog)"
-#    resource.destroy.redirect = "member_conversatio_blogs_url"
+          should_assign_to :blog
+          should_respond_with :redirect
+          #should_redirect_to("the blogs' path") { conversatio_blog_path(@blog) }
+          should_set_the_flash_to(/created/i)
+        end
 
-#    resource.create.flash  = /create/i
-#    resource.update.flash  = /update/i
-#    resource.destroy.flash = /delete/i
-#  end
+        context "with invalid attributes" do
+          setup do
+            post :create, :blog => {:title => "", :description => ""}
+          end
+
+          should_assign_to :blog
+          should_respond_with :success
+          should_render_template :new
+          should_set_the_flash_to(/failed/i)
+        end
+      end
+
+    end
+
+  end
 end
